@@ -7,11 +7,11 @@ public class LegController : MonoBehaviour
     [SerializeField] private Transform bodyTransform;
     [SerializeField] private Leg[] legs;
 
-    private float maxTipWait = 0.7f;
-
+    [SerializeField] private float maxTipWait = 0.7f;
+    
     private bool readySwitchOrder = false;
     private bool stepOrder = true;
-    private float bodyHeightBase = 1.3f;
+    [SerializeField] private float bodyHeightBase = 1.3f;
 
     private Vector3 bodyPos;
     private Vector3 bodyUp;
@@ -19,23 +19,32 @@ public class LegController : MonoBehaviour
     private Vector3 bodyRight;
     private Quaternion bodyRotation;
 
-    private float PosAdjustRatio = 0.1f;
-    private float RotAdjustRatio = 0.2f;
+    [SerializeField] private float PosAdjustRatio = 0.1f;
+    [SerializeField] private float RotAdjustRatio = 0.2f;
+    
+    // Scale factor for dynamic adjustment
+    private float currentScaleFactor = 1.0f;
 
     private void Start()
     {
+        UpdateScaleFactor();
         // Start coroutine to adjust body transform
         StartCoroutine(AdjustBodyTransform());
     }
 
     private void Update()
     {
+        UpdateScaleFactor();
+        
+        // Scale the max tip wait distance based on creature size
+        float scaledMaxTipWait = maxTipWait * currentScaleFactor;
+        
         if (legs.Length < 2) return;
 
         // If tip is not in current order but it's too far from target position, Switch the order
         for (int i = 0; i < legs.Length; i++)
         {
-            if (legs[i].TipDistance > maxTipWait)
+            if (legs[i].TipDistance > scaledMaxTipWait)
             {
                 stepOrder = i % 2 == 0;
                 break;
@@ -63,6 +72,16 @@ public class LegController : MonoBehaviour
             readySwitchOrder = true;
         }
     }
+    
+    private void UpdateScaleFactor()
+    {
+        // Get the current scale from lossyScale (accounts for parent scaling)
+        if (bodyTransform != null)
+        {
+            currentScaleFactor = bodyTransform.lossyScale.x;
+            if (currentScaleFactor <= 0.001f) currentScaleFactor = 0.001f;
+        }
+    }
 
     private IEnumerator AdjustBodyTransform()
     {
@@ -78,8 +97,11 @@ public class LegController : MonoBehaviour
                 bodyUp += leg.TipUpDir + leg.RaycastTipNormal;
             }
 
+            // Scale raycast distance based on creature size for wall/ceiling crawling
+            float scaledRayDist = 10.0f * currentScaleFactor;
+            
             RaycastHit hit;
-            if (Physics.Raycast(bodyTransform.position, bodyTransform.up * -1, out hit, 10.0f))
+            if (Physics.Raycast(bodyTransform.position, bodyTransform.up * -1, out hit, scaledRayDist))
             {
                 bodyUp += hit.normal;
             }
@@ -87,8 +109,11 @@ public class LegController : MonoBehaviour
             tipCenter /= legs.Length;
             bodyUp.Normalize();
 
+            // Scale body height based on creature size
+            float scaledBodyHeight = bodyHeightBase * currentScaleFactor;
+
             // Interpolate postition from old to new
-            bodyPos = tipCenter + bodyUp * bodyHeightBase;
+            bodyPos = tipCenter + bodyUp * scaledBodyHeight;
             bodyTransform.position = Vector3.Lerp(bodyTransform.position, bodyPos, PosAdjustRatio);
 
             // Calculate new body axis
