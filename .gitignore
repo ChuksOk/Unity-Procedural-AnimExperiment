@@ -1,49 +1,28 @@
 ```
-# Unity specific
+# Unity-specific ignores
 Library/
 Temp/
 Obj/
 Build/
-Builds/
-*.unityproj
-*.sln
-*.csproj
-*.user
-*.userprefs
-*.pidb
-*.booproj
-*.svd
-*.pdb
-*.meta
-*.cache
-*.lock
-*.log
-csc.rsp
-.mbprefs
-.vs/
-
-# Build results
-[Bb]uild/
-[Bb]uilds/
-[Ll]ibrary/
-[Tt]emp/
-[Oo]bj/
 Logs/
-Exports/
+*.meta
+!Assets/**/*.meta
 
-# Visual Studio
+# Build artifacts
+*.dll
+*.exe
+*.pdb
+*.unitypackage
+
+# Configuration
+.vscode/
+.idea/
+*.userprefs
 *.suo
 *.user
 *.userosscache
-*.sln.docstates
-
-# Rider
-.idea/
-*.DotSettings
-*.DotSettings.user
-
-# Visual Studio Code
-.vscode/
+*.unity
+*.asset
 
 # Environment
 .env
@@ -52,18 +31,17 @@ Exports/
 
 # OS generated files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
+ehthumbs.db
+Icon?
 desktop.ini
 
 # Logs
 *.log
 
-# Temp files
-*.tmp
-*.temp
+# Package management
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 ```

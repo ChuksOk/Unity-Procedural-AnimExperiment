@@ -66,6 +66,7 @@ public class Leg : MonoBehaviour
 
         // Calculate the tip target position
         // Use bodyTransform.up for ray direction to support vertical/ceiling crawling
+        // Raycast in the local "down" direction relative to the body's orientation
         if (Physics.Raycast(rayOrigin.position, -bodyTransform.up.normalized, out hit, scaledMaxRayDist))
         {
             RaycastTipPos = hit.point;
@@ -99,8 +100,14 @@ public class Leg : MonoBehaviour
         Vector3 tipDirVec = RaycastTipPos - TipPos;
         tipDirVec += tipDirVec.normalized * scaledTipPassOver;
 
-        Vector3 right = Vector3.Cross(bodyTransform.up, tipDirVec.normalized).normalized;
-        TipUpDir = Vector3.Cross(tipDirVec.normalized, right);
+        // Calculate right vector using the surface normal for proper orientation on walls/ceilings
+        Vector3 right = Vector3.Cross(bodyTransform.up.normalized, tipDirVec.normalized).normalized;
+        if (right.magnitude < 0.001f)
+        {
+            // Fallback if vectors are parallel
+            right = Vector3.Cross(RaycastTipNormal, tipDirVec.normalized).normalized;
+        }
+        TipUpDir = Vector3.Cross(tipDirVec.normalized, right).normalized;
 
         while (timer < tipAnimationTime + tipAnimationFrameTime)
         {
@@ -125,8 +132,10 @@ public class Leg : MonoBehaviour
     private void UpdateIKTargetTransform(float scaledIkOffset = 1.0f)
     {
         // Update leg ik target transform depend on tip information
-        ikTarget.transform.position = TipPos + bodyTransform.up.normalized * scaledIkOffset;
-        ikTarget.transform.rotation = Quaternion.LookRotation(TipPos - ikTarget.transform.position) * Quaternion.Euler(90, 0, 0);
+        // Use the surface normal for proper orientation on walls/ceilings
+        Vector3 upDir = RaycastTipNormal != Vector3.zero ? RaycastTipNormal : bodyTransform.up.normalized;
+        ikTarget.transform.position = TipPos + upDir * scaledIkOffset;
+        ikTarget.transform.rotation = Quaternion.LookRotation(TipPos - ikTarget.transform.position, upDir) * Quaternion.Euler(90, 0, 0);
     }
 
     private void OnDrawGizmos()

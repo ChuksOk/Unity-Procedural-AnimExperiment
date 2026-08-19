@@ -83,6 +83,11 @@ public class LegController : MonoBehaviour
         }
     }
 
+    public Leg[] GetLegs()
+    {
+        return legs;
+    }
+
     private IEnumerator AdjustBodyTransform()
     {
         while (true)
@@ -101,7 +106,8 @@ public class LegController : MonoBehaviour
             float scaledRayDist = 10.0f * currentScaleFactor;
             
             RaycastHit hit;
-            if (Physics.Raycast(bodyTransform.position, bodyTransform.up * -1, out hit, scaledRayDist))
+            // Raycast in the direction of body's local down (-up) to detect surface below
+            if (Physics.Raycast(bodyTransform.position, -bodyTransform.up.normalized, out hit, scaledRayDist))
             {
                 bodyUp += hit.normal;
             }
@@ -117,8 +123,13 @@ public class LegController : MonoBehaviour
             bodyTransform.position = Vector3.Lerp(bodyTransform.position, bodyPos, PosAdjustRatio);
 
             // Calculate new body axis
-            bodyRight = Vector3.Cross(bodyUp, bodyTransform.forward);
-            bodyForward = Vector3.Cross(bodyRight, bodyUp);
+            bodyRight = Vector3.Cross(bodyUp, bodyTransform.forward).normalized;
+            if (bodyRight.magnitude < 0.001f)
+            {
+                // Fallback if forward is parallel to up
+                bodyRight = Vector3.Cross(bodyUp, Vector3.right).normalized;
+            }
+            bodyForward = Vector3.Cross(bodyRight, bodyUp).normalized;
 
             // Interpolate rotation from old to new
             bodyRotation = Quaternion.LookRotation(bodyForward, bodyUp);
